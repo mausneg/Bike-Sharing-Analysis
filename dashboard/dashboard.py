@@ -18,14 +18,29 @@ def create_working_holiday(df):
     df_working_holiday.drop(columns=['workingday_day', 'holiday_day'], inplace=True)
     return df_working_holiday
 
+def create_weather(df):
+    df_weather = df.groupby(['weathersit_hour']).agg({
+    'cnt_hour': 'sum',
+    'casual_hour': 'sum',
+    'registered_hour': 'sum'    
+    }).reset_index()
+    df_weather['weather'] = df_weather.apply(
+    lambda row: 'clear_cloudy' if row['weathersit_hour'] == 1 else 
+                'mist_cloudy' if row['weathersit_hour'] == 2 else 
+                'light_rain_snow' if row['weathersit_hour'] == 3 else 
+                'heavy_rain_snow_fog', axis=1
+    )
+    df_weather.drop(columns=['weathersit_hour'], inplace=True)
+    return df_weather
            
 def main_content(df):
     st.header("Bike Sharing Dashboard")
     st.write("Select the tab to view the data")
         
     df_working_holiday = create_working_holiday(df)
+    df_weather = create_weather(df)
 
-    tab_1, tab_2, tab_3 = st.tabs(["Daily Count", "Hourly Count", "Working Holiday"])
+    tab_1, tab_2, tab_3, tab_4, tab_5 = st.tabs(["Daily Count", "Hourly Count", "Working Holiday", "Correlation", "Weather"])
     with tab_1:
         fig, ax = plt.subplots()
         sns.lineplot(data=df, x='dteday', y='registered_day', ax=ax, color='blue', label='Registered Users', markers='o')
@@ -38,40 +53,73 @@ def main_content(df):
         plt.grid(alpha=0.3)
         st.pyplot(fig)
         st.dataframe(df)
-
     with tab_2:
         st.write("Select a date to view hourly details:")
         unique_dates = df['dteday'].dt.date.unique()
-        selected_date = st.selectbox("Select Date", options=unique_dates)  
+        selected_date = st.selectbox("Select Date", options=unique_dates)
         filtered_data = df[df['dteday'].dt.date == selected_date]
         st.write(f"Hourly details for {selected_date}:")
-        sns.lineplot(data=filtered_data, x='hr', y='registered_hour', ax=ax, color='blue', label='Registered Users', markers='o')
-        sns.lineplot(data=filtered_data, x='hr', y='casual_hour', ax=ax, color='orange', label='Casual Users', markers='o')
+        fig, ax = plt.subplots()
+        sns.lineplot(data=filtered_data, x='hr', y='registered_hour', ax=ax, color='blue', label='Registered Users', marker='o')
+        sns.lineplot(data=filtered_data, x='hr', y='casual_hour', ax=ax, color='orange', label='Casual Users', marker='o')
         ax.set_title(f'Hourly Bike Rentals on {selected_date}')
         ax.set_xlabel('Hour')
         ax.set_ylabel('Count')
+        ax.set_xticks(filtered_data['hr'])
+        ax.set_xticklabels(filtered_data['hr'], size=8)
+        ax.legend()
         plt.grid(alpha=0.3)
-        plt.xticks(filtered_data['hr'], size=8)
         st.pyplot(fig)
         st.dataframe(filtered_data)
 
     with tab_3:
         st.write("Bike Rentals by Day Type")
         fig, ax = plt.subplots(figsize=(8, 5))
-        bar_width = 0.35  # Lebar bar
+        bar_width = 0.35 
         x = range(len(df_working_holiday['day_type']))
         ax.bar([p for p in x], df_working_holiday['casual_day'], width=bar_width, label='Casual Users', color='orange')
         ax.bar([p + bar_width for p in x], df_working_holiday['registered_day'], width=bar_width, label='Registered Users', color='green')
         ax.set_xlabel('Day Type', fontsize=12)
         ax.set_ylabel('Count', fontsize=12)
         ax.set_title('Bike Rentals by Day Type', fontsize=14)
-        ax.set_xticks([p + bar_width / 2 for p in x])  # Posisikan label di tengah
+        ax.set_xticks([p + bar_width / 2 for p in x])
         ax.set_xticklabels(df_working_holiday['day_type'])
-        ax.legend()
         st.pyplot(fig)
         st.dataframe(df_working_holiday)
 
+    with tab_4:
+        st.write("Correlation Between Features")
+        fig, axes = plt.subplots(3, 1, figsize=(6, 12))
+        sns.scatterplot(x='atemp_original_day', y='cnt_day', data=df, color='blue', ax=axes[0])
+        axes[0].set_title('Suhu vs Jumlah Peminjaman')
+        axes[0].set_xlabel('Suhu')
+        axes[0].set_ylabel('Jumlah Peminjaman')
+        sns.scatterplot(x='hum_original_day', y='cnt_day', data=df, color='green', ax=axes[1])
+        axes[1].set_title('Kelembapan vs Jumlah Peminjaman')
+        axes[1].set_xlabel('Kelembapan')
+        axes[1].set_ylabel('Jumlah Peminjaman')
+        sns.scatterplot(x='windspeed_original_day', y='cnt_day', data=df, color='red', ax=axes[2])
+        axes[2].set_title('Kecepatan Angin vs Jumlah Peminjaman')
+        axes[2].set_xlabel('Kecepatan Angin')
+        axes[2].set_ylabel('Jumlah Peminjaman')
+        plt.tight_layout()
+        st.pyplot(fig)
 
+    with tab_5:
+        st.write("Bike Rentals by Weather")
+        fig, ax = plt.subplots(figsize=(10, 6))
+        bar_width = 0.35 
+        x = range(len(df_weather['weather']))
+        ax.bar([p for p in x], df_weather['casual_hour'], width=bar_width, label='Casual Users', color='orange')
+        ax.bar([p + bar_width for p in x], df_weather['registered_hour'], width=bar_width, label='Registered Users', color='green')
+        ax.set_xlabel('Weather', fontsize=12)
+        ax.set_ylabel('Count', fontsize=12)
+        ax.set_title('Bike Rentals by Weather', fontsize=14)
+        ax.set_xticks([p + bar_width / 2 for p in x])
+        ax.set_xticklabels(df_weather['weather'])
+        ax.legend()
+        st.pyplot(fig)
+        st.dataframe(df_weather)
 
 
 def date_filter(df, start_date, end_date):
