@@ -36,7 +36,7 @@ def create_weather(df):
 def main_content(df):
     st.header("Bike Sharing Dashboard")
     st.write("Select the tab to view the data")
-        
+        kf
     df_working_holiday = create_working_holiday(df)
     df_weather = create_weather(df)
 
