@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from matplotlib import pyplot as plt
-import numpy as np
 import seaborn as sns
 
 def create_working_holiday(df):
@@ -36,43 +35,12 @@ def create_weather(df):
 def main_content(df):
     st.header("Bike Sharing Dashboard")
     st.write("Select the tab to view the data")
-        kf
     df_working_holiday = create_working_holiday(df)
     df_weather = create_weather(df)
 
-    tab_1, tab_2, tab_3, tab_4, tab_5 = st.tabs(["Daily Count", "Hourly Count", "Working Holiday", "Correlation", "Weather"])
-    with tab_1:
-        fig, ax = plt.subplots()
-        sns.lineplot(data=df, x='dteday', y='registered_day', ax=ax, color='blue', label='Registered Users', markers='o')
-        sns.lineplot(data=df, x='dteday', y='casual_day', ax=ax, color='orange', label='Casual Users', markers='o')
-        ax.legend()
-        ax.set_title('Daily Count')
-        plt.xticks(df['dteday'][::int(len(df)/10)], rotation=45, size=8)
-        plt.xlabel('Date')
-        plt.ylabel('Count')
-        plt.grid(alpha=0.3)
-        st.pyplot(fig)
-        st.dataframe(df)
-    with tab_2:
-        st.write("Select a date to view hourly details:")
-        unique_dates = df['dteday'].dt.date.unique()
-        selected_date = st.selectbox("Select Date", options=unique_dates)
-        filtered_data = df[df['dteday'].dt.date == selected_date]
-        st.write(f"Hourly details for {selected_date}:")
-        fig, ax = plt.subplots()
-        sns.lineplot(data=filtered_data, x='hr', y='registered_hour', ax=ax, color='blue', label='Registered Users', marker='o')
-        sns.lineplot(data=filtered_data, x='hr', y='casual_hour', ax=ax, color='orange', label='Casual Users', marker='o')
-        ax.set_title(f'Hourly Bike Rentals on {selected_date}')
-        ax.set_xlabel('Hour')
-        ax.set_ylabel('Count')
-        ax.set_xticks(filtered_data['hr'])
-        ax.set_xticklabels(filtered_data['hr'], size=8)
-        ax.legend()
-        plt.grid(alpha=0.3)
-        st.pyplot(fig)
-        st.dataframe(filtered_data)
+    tab_1, tab_2, tab_3, tab_4, tab_5 = st.tabs(["Working Holiday", "Weather", "Correlation", "Daily Count", "Hourly Count"])
 
-    with tab_3:
+    with tab_1:
         st.write("Bike Rentals by Day Type")
         fig, ax = plt.subplots(figsize=(8, 5))
         bar_width = 0.35 
@@ -87,7 +55,23 @@ def main_content(df):
         st.pyplot(fig)
         st.dataframe(df_working_holiday)
 
-    with tab_4:
+    with tab_2:
+        st.write("Bike Rentals by Weather")
+        fig, ax = plt.subplots(figsize=(10, 6))
+        bar_width = 0.35 
+        x = range(len(df_weather['weather']))
+        ax.bar([p for p in x], df_weather['casual_hour'], width=bar_width, label='Casual Users', color='orange')
+        ax.bar([p + bar_width for p in x], df_weather['registered_hour'], width=bar_width, label='Registered Users', color='green')
+        ax.set_xlabel('Weather', fontsize=12)
+        ax.set_ylabel('Count', fontsize=12)
+        ax.set_title('Bike Rentals by Weather', fontsize=14)
+        ax.set_xticks([p + bar_width / 2 for p in x])
+        ax.set_xticklabels(df_weather['weather'])
+        ax.legend()
+        st.pyplot(fig)
+        st.dataframe(df_weather)
+
+    with tab_3:
         st.write("Correlation Between Features")
         fig, axes = plt.subplots(3, 1, figsize=(6, 12))
         sns.scatterplot(x='atemp_original_day', y='cnt_day', data=df, color='blue', ax=axes[0])
@@ -105,21 +89,39 @@ def main_content(df):
         plt.tight_layout()
         st.pyplot(fig)
 
-    with tab_5:
-        st.write("Bike Rentals by Weather")
-        fig, ax = plt.subplots(figsize=(10, 6))
-        bar_width = 0.35 
-        x = range(len(df_weather['weather']))
-        ax.bar([p for p in x], df_weather['casual_hour'], width=bar_width, label='Casual Users', color='orange')
-        ax.bar([p + bar_width for p in x], df_weather['registered_hour'], width=bar_width, label='Registered Users', color='green')
-        ax.set_xlabel('Weather', fontsize=12)
-        ax.set_ylabel('Count', fontsize=12)
-        ax.set_title('Bike Rentals by Weather', fontsize=14)
-        ax.set_xticks([p + bar_width / 2 for p in x])
-        ax.set_xticklabels(df_weather['weather'])
+    with tab_4:
+        st.write("Daily Count of Bike Rentals")
+        fig, ax = plt.subplots(figsize=(18, 6))
+        sns.lineplot(data=df, x='dteday', y='registered_day', ax=ax, color='blue', label='Registered Users', marker='o', markersize=3)
+        sns.lineplot(data=df, x='dteday', y='casual_day', ax=ax, color='orange', label='Casual Users', marker='o', markersize=3)
         ax.legend()
+        ax.set_title('Daily Count')
+        plt.xticks(df['dteday'][::int(len(df)/10)], rotation=45, size=8)
+        plt.xlabel('Date')
+        plt.ylabel('Count')
+        plt.grid(alpha=0.3)
         st.pyplot(fig)
-        st.dataframe(df_weather)
+        st.dataframe(df)
+
+    with tab_5:
+        st.write("Select a date to view hourly details:")
+        unique_dates = df['dteday'].dt.date.unique()
+        selected_date = st.selectbox("Select Date", options=unique_dates)
+        filtered_data = df[df['dteday'].dt.date == selected_date]
+        st.write(f"Hourly details for {selected_date}:")
+        fig, ax = plt.subplots()
+        sns.lineplot(data=filtered_data, x='hr', y='cnt_hour', ax=ax, color='blue', label='Jumlah Peminjaman  ', marker='o')
+        ax.set_title(f'Hourly Bike Rentals on {selected_date}')
+        ax.set_xlabel('Hour')
+        ax.set_ylabel('Count')
+        ax.set_xticks(filtered_data['hr'])
+        ax.set_xticklabels(filtered_data['hr'], size=8)
+        ax.legend()
+        plt.grid(alpha=0.3)
+        st.pyplot(fig)
+        st.dataframe(filtered_data)
+
+
 
 
 def date_filter(df, start_date, end_date):
