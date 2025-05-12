@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from matplotlib import pyplot as plt
 import seaborn as sns
+import os
 
 def create_working_holiday(df):
     df_working_holiday = df.groupby(['workingday_day', 'holiday_day']).agg({
@@ -143,7 +144,9 @@ def side_bar(df):
         return start_date, end_date
 
 def main():
-    df_all = pd.read_csv("dashboard/all.csv")
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, "all.csv")
+    df_all = pd.read_csv(file_path)
     df_all['dteday'] = pd.to_datetime(df_all['dteday'])
     start_dat, end_date = side_bar(df_all)
     df_main = date_filter(df_all, start_dat, end_date)
